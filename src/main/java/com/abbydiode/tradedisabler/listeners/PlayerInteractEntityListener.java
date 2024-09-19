@@ -19,32 +19,50 @@ import java.util.List;
 
 public class PlayerInteractEntityListener implements Listener {
 	private App plugin;
-	private List<String> disabledMaterials;
-	private List<String> disabledEnchantments;
 	
 	public PlayerInteractEntityListener(App plugin) {
 		this.plugin = plugin;
-		this.disabledMaterials = plugin.getConfig().getStringList("disabledMaterials");
-		this.disabledEnchantments = plugin.getConfig().getStringList("disabledEnchantments");
 		
 		Bukkit.getPluginManager().registerEvents(this, plugin);
 	}
 
 	@EventHandler
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
+		if (!plugin.getConfig().getBoolean("enable"))
+			return;
+		
 		Entity entity = e.getRightClicked();
+		
 		if (entity.getType() == EntityType.VILLAGER) {
 			Villager villager = (Villager) entity;
 			villager.getRecipes().forEach(recipe -> {
-				for (String material : disabledMaterials) {
+				for (String material : plugin.getConfig().getStringList("disabledMaterials")) {
 					if (recipe.getResult().getType() == Material.matchMaterial(material)) {
 						recipe.setUses(recipe.getMaxUses());
-					} else if (recipe.getResult().getType() == Material.ENCHANTED_BOOK) {
-						for (String enchantment : disabledEnchantments) {
-							if (((EnchantmentStorageMeta) recipe.getResult().getItemMeta()).getStoredEnchantLevel(Enchantment.getByKey(NamespacedKey.fromString(enchantment))) > 0) {
-								recipe.setUses(recipe.getMaxUses());
+					} 
+				}
+
+				if (recipe.getResult().getType() == Material.ENCHANTED_BOOK) {
+					for (String enchantment : plugin.getConfig().getStringList("disabledEnchantments")) {
+						String enchantName = enchantment.split("\\|")[0];
+
+						recipe.getResult().getEnchantments().forEach((enchant, level) -> {
+							App.getInstance().getLogger().info(enchantName);
+							
+							if (enchant.getKey().toString().equals(enchantName)) {
+								if (enchantment.split("\\|").length == 2) {
+									int enchantLevel = Integer.parseInt(enchantment.split("\\|")[1]);
+
+									App.getInstance().getLogger().info(String.valueOf(enchantLevel));
+									
+									if (level == enchantLevel)
+										recipe.setUses(recipe.getMaxUses());
+								}
+								else if (level > 0) {
+									recipe.setUses(recipe.getMaxUses());
+								}
 							}
-						}
+						});
 					}
 				}
 			});

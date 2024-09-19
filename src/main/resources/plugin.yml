@@ -5,3 +5,13 @@ description: ${project.description}
 author: https://github.com/abbydiode
 website: ${project.url}
 api-version: 1.21
+
+commands:
+  tradedisabler:
+    permission: tradedisabler.commands
+    aliases: [ "tradedis" ]
+
+permissions:
+  tradedisabler.commands:
+    default: op
+    description: Permission to use commands
